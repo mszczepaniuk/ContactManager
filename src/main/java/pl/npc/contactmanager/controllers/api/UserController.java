@@ -53,8 +53,13 @@ public class UserController {
         }
 
         if (success) {
-            userService.register(bindingModel.getUsername(), bindingModel.getConfirmPassword());
-            return ResponseEntity.ok(null);
+            User user = userService.register(bindingModel.getUsername(), bindingModel.getConfirmPassword());
+            String token = tokenService.getAccessToken(user);
+
+            AuthenticateViewModel vm = new AuthenticateViewModel();
+            vm.setAccessToken(token);
+            vm.setUserId(user.getId());
+            return ResponseEntity.ok(new Gson().toJson(vm));
         } else {
             String jsonString = new ApiErrorUtil().errorMessageListToJson(errorMessages);
             return ResponseEntity.badRequest().body(jsonString);

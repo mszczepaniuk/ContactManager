@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.npc.contactmanager.dto.bindingmodels.ContactBindingModel;
 import pl.npc.contactmanager.dto.viewmodels.BusinessSubcategoriesViewModel;
+import pl.npc.contactmanager.dto.viewmodels.ContactViewModel;
 import pl.npc.contactmanager.entities.Contact;
 import pl.npc.contactmanager.interfaces.services.IContactService;
 import pl.npc.contactmanager.interfaces.services.ITokenService;
@@ -53,7 +54,7 @@ public class ContactController {
             String errorJson = new ApiErrorUtil().errorMessageListToJson(new ArrayList<>(List.of("Nie istnieje kontakt o podanym id.")));
             return ResponseEntity.badRequest().body(errorJson);
         }
-        Contact contact = contactService.getFullContactById(id);
+        ContactViewModel contact = contactService.getFullContactById(id);
         return ResponseEntity.ok(new Gson().toJson(contact));
     }
 

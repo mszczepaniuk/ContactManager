@@ -18,20 +18,20 @@ import java.util.Date;
 import java.util.Optional;
 
 @Service
-public class JWTUserService implements IUserService {
+public class UserService implements IUserService {
 
     private final IUserRepository userRepo;
     private final IPasswordService passwordService;
 
     @Autowired
-    public JWTUserService(IUserRepository userRepo,
-                          IPasswordService passwordService) {
+    public UserService(IUserRepository userRepo,
+                       IPasswordService passwordService) {
         this.userRepo = userRepo;
         this.passwordService = passwordService;
     }
 
     @Override
-    public void register(String username, String password) {
+    public User register(String username, String password) {
         byte[] salt = passwordService.generateSalt();
         byte[] hashedPassword = passwordService.getPasswordHash(password, salt);
         User user = new User();
@@ -40,6 +40,7 @@ public class JWTUserService implements IUserService {
         user.setSalt(salt);
         user.setCreationDate(new Date());
         userRepo.save(user);
+        return user;
     }
 
     @Override

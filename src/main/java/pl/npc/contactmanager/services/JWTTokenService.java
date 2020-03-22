@@ -18,11 +18,11 @@ import java.util.Date;
 @Service
 public class JWTTokenService implements ITokenService {
 
-    @Value("${token.secret}")
+    @Value("${contactmanager.token.secret}")
     private String secretKey;
-    @Value("${token.validtime}")
+    @Value("${contactmanager.token.validtime}")
     private int validTimeInMinutes;
-    @Value("${token.issuer}")
+    @Value("${contactmanager.token.issuer}")
     private String issuer;
 
     @Override

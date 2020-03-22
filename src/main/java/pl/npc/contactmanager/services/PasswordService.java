@@ -12,9 +12,9 @@ import java.security.SecureRandom;
 @Service
 public class PasswordService implements IPasswordService {
 
-    @Value("${password.minlength}")
+    @Value("${contactmanager.password.minlength}")
     private int requiredLength;
-    @Value("${password.requiredigit}")
+    @Value("${contactmanager.password.requiredigit}")
     private boolean requireDigit;
 
     @Override

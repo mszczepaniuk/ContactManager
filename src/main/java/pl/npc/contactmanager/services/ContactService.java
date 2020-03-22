@@ -1,12 +1,14 @@
 package pl.npc.contactmanager.services;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import pl.npc.contactmanager.dto.bindingmodels.ContactBindingModel;
 import pl.npc.contactmanager.dto.viewmodels.BasicContactViewModel;
 import pl.npc.contactmanager.dto.viewmodels.BusinessSubcategoriesViewModel;
+import pl.npc.contactmanager.dto.viewmodels.ContactViewModel;
 import pl.npc.contactmanager.entities.BusinessSubcategory;
 import pl.npc.contactmanager.entities.Contact;
 import pl.npc.contactmanager.interfaces.repositories.IBusinessSubcategoryRepository;
@@ -15,6 +17,7 @@ import pl.npc.contactmanager.interfaces.services.IContactService;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,6 +28,8 @@ public class ContactService implements IContactService {
 
     private final IContactRepository contactRepo;
     private final IBusinessSubcategoryRepository subcategoryRepository;
+    @Value("${contactmanager.contact.resultsperpage}")
+    private int resultsPerPage;
 
     @Autowired
     public ContactService(IContactRepository contactRepo,
@@ -34,20 +39,41 @@ public class ContactService implements IContactService {
     }
 
     @Override
-    public Contact getFullContactById(long id) {
-        return contactRepo.findById(id).get();
+    public ContactViewModel getFullContactById(long id) {
+        ContactViewModel vm = new ContactViewModel();
+        Contact contact = contactRepo.findById(id).get();
+        vm.setId(id);
+        vm.setFirstName(contact.getFirstName());
+        vm.setLastName(contact.getLastName());
+        vm.setEmail(contact.getEmail());
+        vm.setPassword(contact.getPassword());
+        vm.setCategory(contact.getCategory());
+        vm.setSubcategory(contact.getSubcategory());
+        vm.setTelephoneNumber(contact.getTelephoneNumber());
+        vm.setDateOfBirth(contact.getDateOfBirth().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        vm.setCreationDate(contact.getCreationDate().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        if (contact.getUpdateDate() != null) {
+            vm.setUpdateDate(contact.getUpdateDate().toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        }
+        return vm;
     }
 
     @Override
     public List<BasicContactViewModel> getPageOfBasicsContacts(int page) {
-        Page<Contact> contacts = contactRepo.findAll(PageRequest.of(page, 10));
+        Page<Contact> contacts = contactRepo.findAll(PageRequest.of(page - 1, resultsPerPage));
         return PageOfFullContactsToListOfBasicContacts(contacts);
     }
 
     @Override
     public Contact addContact(ContactBindingModel bindingModel) {
         Contact contact = new Contact();
-        ContactBindingModelToContact(contact,bindingModel);
+        ContactBindingModelToContact(contact, bindingModel);
         contact.setCreationDate(new Date());
         contactRepo.save(contact);
         return contact;
@@ -56,7 +82,7 @@ public class ContactService implements IContactService {
     @Override
     public Contact editContact(long id, ContactBindingModel bindingModel) {
         Contact contact = contactRepo.findById(id).get();
-        ContactBindingModelToContact(contact,bindingModel);
+        ContactBindingModelToContact(contact, bindingModel);
         contact.setUpdateDate(new Date());
         contactRepo.save(contact);
         return contact;
@@ -78,11 +104,20 @@ public class ContactService implements IContactService {
     public BusinessSubcategoriesViewModel getBusinessSubcategories() {
         BusinessSubcategoriesViewModel vm = new BusinessSubcategoriesViewModel();
         List<String> subcategories = new ArrayList<>();
-        for (BusinessSubcategory subcategoryObject : subcategoryRepository.findAll()){
+        for (BusinessSubcategory subcategoryObject : subcategoryRepository.findAll()) {
             subcategories.add(subcategoryObject.getSubcategory());
         }
         vm.setSubcategories(subcategories);
         return vm;
+    }
+
+    @Override
+    public long getAmountOfPages() {
+        long contacts = contactRepo.count();
+        if (contacts == 0) {
+            contacts = 1;
+        }
+        return ((contacts - 1) / resultsPerPage) + 1;
     }
 
     private List<BasicContactViewModel> PageOfFullContactsToListOfBasicContacts(Page<Contact> fullContacts) {
@@ -98,7 +133,7 @@ public class ContactService implements IContactService {
     }
 
     // Zmienia pola przekazanego kontaktu na te które są w modelu.
-    private void ContactBindingModelToContact(Contact contact, ContactBindingModel bindingModel){
+    private void ContactBindingModelToContact(Contact contact, ContactBindingModel bindingModel) {
         contact.setFirstName(bindingModel.getFirstName());
         contact.setLastName(bindingModel.getLastName());
         contact.setEmail(bindingModel.getEmail());
@@ -108,7 +143,7 @@ public class ContactService implements IContactService {
         contact.setTelephoneNumber(bindingModel.getTelephoneNumber());
 
         LocalDate localDate = LocalDate.parse(bindingModel.getDateOfBirth());
-        Date dateOfBirth =  Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        Date dateOfBirth = Date.from(localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
         contact.setDateOfBirth(dateOfBirth);
     }
 }
